@@ -247,8 +247,10 @@ function loadServices(){
         var priceRaw = (r[ix["Price"]]||"").trim();
         var recRaw = (r[ix["Recurring"]]||"").trim();
         var m = priceRaw.replace(/,/g,"").match(/\$\s*(\d+(?:\.\d+)?)/);
+        var rm = recRaw.replace(/,/g,"").match(/\$\s*(\d+(?:\.\d+)?)/);
+        var df = /\/\s*mo|month/i.test(recRaw) ? "Monthly" : "";
         return { id:"svc"+i, name:(r[ix["Service"]]||"").trim(), priceRaw:priceRaw,
-          priceNum: m?parseFloat(m[1]):"", recurring:!!recRaw, recRaw:recRaw,
+          priceNum: m?parseFloat(m[1]):"", recNum: rm?parseFloat(rm[1]):"", defFreq: df, recurring:!!recRaw, recRaw:recRaw,
           includes:(r[ix["Includes"]]||"").trim(), notes:(r[ix["Notes"]]||"").trim(),
           desc:(r[ix["Description"]]||"").trim() };
       }).filter(function(s){ return s.name; });
@@ -272,11 +274,14 @@ function renderServices(){
         + (s.desc?"<b>What it is:</b> "+esc(s.desc)+"<br>":"")
         + (s.notes?"<b>Note:</b> "+esc(s.notes):"") + "</div>"
         + "<div class='edit' onclick='event.stopPropagation()'>"
-        + "<label style='margin-top:0'>Price charged ($)"+(s.priceNum===""?" <span class='note'>(list: "+esc(s.priceRaw)+")</span>":"")+"</label>"
-        + "<input type='number' inputmode='decimal' step='0.01' id='p-"+s.id+"' value='"+(selected[s.id].price)+"' oninput='setPrice(\""+s.id+"\",this.value)'>"
-        + "<div id='fl-"+s.id+"' class='flag'>"+(selected[s.id].edited?"Custom price - will be flagged RED to the BDC":"")+"</div>";
+        + "<label style='margin-top:0'>"+(s.recurring?"One-time / initial cost ($)":"Price charged ($)")+" <span class='note'>(list: "+esc(s.priceRaw)+")</span></label>"
+        + "<input type='number' inputmode='decimal' step='0.01' id='p-"+s.id+"' value='"+(selected[s.id].init)+"' oninput='setInit(\""+s.id+"\",this.value)'>"
+        + "<div id='fl-"+s.id+"' class='flag'>"+(selected[s.id].editedInit?"Custom price - will be flagged RED to the BDC":"")+"</div>";
       if(s.recurring){
-        html += "<label>Frequency <span class='req'>*</span></label><select id='fq-"+s.id+"' onchange='setFreq(\""+s.id+"\",this.value)'>"
+        html += "<label>Recurring cost ($ per period) <span class='note'>(list: "+esc(s.recRaw)+")</span></label>"
+          + "<input type='number' inputmode='decimal' step='0.01' id='pr-"+s.id+"' value='"+(selected[s.id].rec)+"' oninput='setRec(\""+s.id+"\",this.value)'>"
+          + "<div id='fr-"+s.id+"' class='flag'>"+(selected[s.id].editedRec?"Custom recurring price - will be flagged RED to the BDC":"")+"</div>"
+          + "<label>Frequency <span class='req'>*</span></label><select id='fq-"+s.id+"' onchange='setFreq(\""+s.id+"\",this.value)'>"
           + "<option value=''>Select frequency...</option>"
           + FREQS.map(function(f){ return "<option"+(selected[s.id].frequency===f?" selected":"")+">"+f+"</option>"; }).join("")
           + "</select>";
@@ -290,14 +295,21 @@ function renderServices(){
 function toggleSvc(id){
   var s = services.find(function(x){return x.id===id;});
   if(selected[id]) delete selected[id];
-  else selected[id] = { price: s.priceNum, edited:false, frequency:"" };
+  else selected[id] = { init: s.priceNum, rec: s.recNum, editedInit:false, editedRec:false, frequency: s.defFreq || "" };
   renderServices();
 }
-function setPrice(id, v){
+function setInit(id, v){
   var s = services.find(function(x){return x.id===id;});
-  selected[id].price = v;
-  selected[id].edited = (String(v) !== String(s.priceNum));
-  document.getElementById("fl-"+id).textContent = selected[id].edited ? "Custom price - will be flagged RED to the BDC" : "";
+  selected[id].init = v;
+  selected[id].editedInit = (String(v) !== String(s.priceNum));
+  document.getElementById("fl-"+id).textContent = selected[id].editedInit ? "Custom price - will be flagged RED to the BDC" : "";
+  updateTotals();
+}
+function setRec(id, v){
+  var s = services.find(function(x){return x.id===id;});
+  selected[id].rec = v;
+  selected[id].editedRec = (String(v) !== String(s.recNum));
+  document.getElementById("fr-"+id).textContent = selected[id].editedRec ? "Custom recurring price - will be flagged RED to the BDC" : "";
   updateTotals();
 }
 function setFreq(id, v){ selected[id].frequency = v; updateTotals(); }
@@ -305,7 +317,7 @@ function setFreq(id, v){ selected[id].frequency = v; updateTotals(); }
 /* ---------- custom services ---------- */
 function addCustom(){
   var cid = "cus" + Date.now();
-  customs.push({ id:cid, name:"", price:"", recurring:false, frequency:"" });
+  customs.push({ id:cid, name:"", price:"", init:"", recurring:false, frequency:"" });
   renderCustoms();
 }
 function renderCustoms(){
@@ -314,11 +326,13 @@ function renderCustoms(){
       + "<div class='flag'>CUSTOM SERVICE - goes to the BDC flagged RED</div>"
       + "<label>Service description <span class='req'>*</span></label>"
       + "<input id='cn-"+c.id+"' value=\""+esc(c.name)+"\" placeholder='e.g. Extra bed bug unit - 2nd floor apt' oninput='custSet(\""+c.id+"\",\"name\",this.value)'>"
-      + "<label>Price ($) <span class='req'>*</span></label>"
+      + "<label>"+(c.recurring?"Recurring cost ($ per period)":"Price ($)")+" <span class='req'>*</span></label>"
       + "<input id='cp-"+c.id+"' type='number' inputmode='decimal' step='0.01' value='"+c.price+"' oninput='custSet(\""+c.id+"\",\"price\",this.value)'>"
       + "<label>Type</label><select onchange='custSet(\""+c.id+"\",\"recurring\",this.value===\"rec\")'>"
       + "<option value='one'"+(!c.recurring?" selected":"")+">One-time</option><option value='rec'"+(c.recurring?" selected":"")+">Recurring</option></select>"
-      + (c.recurring ? "<label>Frequency <span class='req'>*</span></label><select onchange='custSet(\""+c.id+"\",\"frequency\",this.value)'>"
+      + (c.recurring ? "<label>One-time / initial cost ($) <span class='note'>(optional)</span></label>"
+          + "<input type='number' inputmode='decimal' step='0.01' value='"+(c.init||"")+"' oninput='custSet(\""+c.id+"\",\"init\",this.value)'>"
+          + "<label>Frequency <span class='req'>*</span></label><select onchange='custSet(\""+c.id+"\",\"frequency\",this.value)'>"
           + "<option value=''>Select frequency...</option>"
           + FREQS.map(function(f){ return "<option"+(c.frequency===f?" selected":"")+">"+f+"</option>"; }).join("") + "</select>" : "")
       + "<button type='button' class='btn ghost' style='margin-top:10px;padding:8px;font-size:13px' onclick='custDel(\""+c.id+"\")'>Remove</button>"
@@ -334,14 +348,16 @@ function selList(){
   var out=[];
   Object.keys(selected).forEach(function(id){
     var s = services.find(function(x){return x.id===id;});
-    out.push({ name:s.name, price:selected[id].price, listPriceRaw:s.priceRaw, edited:selected[id].edited,
-      custom:false, recurring:s.recurring, recurringPriceRaw:s.recRaw, frequency:selected[id].frequency,
+    var sel = selected[id];
+    var recStr = s.recurring ? ((sel.rec!=="" && sel.rec!=null) ? ("$"+sel.rec) : s.recRaw) : "";
+    out.push({ name:s.name, price:sel.init, listPriceRaw:s.priceRaw, edited:(sel.editedInit||sel.editedRec),
+      custom:false, recurring:s.recurring, recurringPriceRaw:recStr, recPrice:sel.rec, frequency:sel.frequency,
       includes:s.includes, svcNotes:s.notes });
   });
   customs.forEach(function(c){
     if(!c.name && !c.price) return;
-    out.push({ name:c.name, price:c.price, listPriceRaw:"", edited:false, custom:true,
-      recurring:c.recurring, recurringPriceRaw:c.recurring?("$"+c.price):"", frequency:c.frequency, includes:"", svcNotes:"" });
+    out.push({ name:c.name, price:(c.recurring?(c.init||""):c.price), listPriceRaw:"", edited:false, custom:true,
+      recurring:c.recurring, recurringPriceRaw:c.recurring?("$"+c.price):"", recPrice:(c.recurring?c.price:""), frequency:c.frequency, includes:"", svcNotes:"" });
   });
   return out;
 }
@@ -351,7 +367,7 @@ function updateTotals(){
   if(!list.length){ box.style.display="none"; return; }
   box.style.display="block";
   var ot = 0;
-  list.forEach(function(s){ if(!s.recurring && s.price!=="" && !isNaN(parseFloat(s.price))) ot += parseFloat(s.price); });
+  list.forEach(function(s){ if(s.price!=="" && s.price!=null && !isNaN(parseFloat(s.price))) ot += parseFloat(s.price); });
   document.getElementById("t-onetime").textContent = "$" + ot.toFixed(2).replace(/\.00$/,"");
   var recs = list.filter(function(s){return s.recurring;});
   document.getElementById("t-rec-ln").style.display = recs.length?"flex":"none";
@@ -426,8 +442,9 @@ function submitSold(){
     var s=list[i];
     if(s.custom && (!s.name || s.price==="")){ errEl.innerHTML="<div class='err'>Custom services need a description and a price.</div>"; return; }
     if(s.recurring && !s.frequency){ errEl.innerHTML="<div class='err'>Pick a frequency for: "+esc(s.name)+"</div>"; return; }
+    if(s.recurring && (s.recPrice==="" || s.recPrice==null) && !s.recurringPriceRaw){ errEl.innerHTML="<div class='err'>Enter the recurring cost for: "+esc(s.name)+"</div>"; return; }
   }
-  var ot=0; list.forEach(function(s){ if(!s.recurring && s.price!=="" && !isNaN(parseFloat(s.price))) ot+=parseFloat(s.price); });
+  var ot=0; list.forEach(function(s){ if(s.price!=="" && s.price!=null && !isNaN(parseFloat(s.price))) ot+=parseFloat(s.price); });
   d.oneTimeTotal = ot ? ot.toFixed(2).replace(/\.00$/,"") : "";
   var recs = list.filter(function(s){return s.recurring;});
   d.recurringSummary = recs.map(function(s){ return (s.recurringPriceRaw||("$"+s.price))+(s.frequency?" ("+s.frequency+")":""); }).join(" + ");
