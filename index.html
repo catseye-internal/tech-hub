@@ -131,12 +131,11 @@
   <input id="s-address">
   <label>Town</label>
   <input id="s-town">
-  <label>When is the work happening? <span class="req">*</span></label>
-  <select id="s-timing">
-    <option value="">Select...</option>
-    <option value="today">Performed today (I did / am doing the work this visit)</option>
-    <option value="future">Future work &mdash; needs scheduling</option>
-  </select>
+  <label>When is the work happening? <span class="req">*</span> <span class="note">check all that apply</span></label>
+  <div class="card" style="margin-top:4px">
+    <label style="margin:6px 0;font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="s-today" style="width:auto;transform:scale(1.4)"> Performed today (I did / am doing work this visit)</label>
+    <label style="margin:6px 0;font-weight:600;font-size:15px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="s-future" style="width:auto;transform:scale(1.4)"> Future work &mdash; needs scheduling</label>
+  </div>
   <label style="margin-top:20px">Services sold <span class="req">*</span> <span class="note">tap to select &middot; tap again to close</span></label>
   <div id="svcList"><div class="spin">Loading services&hellip;</div></div>
   <div class="totals" id="totals" style="display:none">
@@ -351,11 +350,13 @@ function submitSold(){
     kind:"sold", techName:techName(), techEmail:techEmail(),
     account:val("s-account"), custName:val("s-name"), custPhone:val("s-phone"),
     custAddress:val("s-address"), custTown:val("s-town"),
-    timing:val("s-timing"), services:list, notes:val("s-notes")
+    timingToday: document.getElementById("s-today").checked,
+    timingFuture: document.getElementById("s-future").checked,
+    services:list, notes:val("s-notes")
   };
   if(!d.custName){ errEl.innerHTML="<div class='err'>Customer name is required.</div>"; return; }
   if(d.custPhone.replace(/\D/g,"").length<7){ errEl.innerHTML="<div class='err'>A valid customer phone is required.</div>"; return; }
-  if(!d.timing){ errEl.innerHTML="<div class='err'>Pick when the work is happening.</div>"; return; }
+  if(!d.timingToday && !d.timingFuture){ errEl.innerHTML="<div class='err'>Check when the work is happening (at least one).</div>"; return; }
   if(!list.length){ errEl.innerHTML="<div class='err'>Select at least one service (or add a custom one).</div>"; return; }
   for(var i=0;i<list.length;i++){
     var s=list[i];
@@ -369,7 +370,8 @@ function submitSold(){
   var recs = list.filter(function(s){return s.recurring;});
   d.recurringSummary = recs.map(function(s){ return (s.recurringPriceRaw||("$"+s.price))+(s.frequency?" ("+s.frequency+")":""); }).join(" + ");
   post(d, document.getElementById("s-submit"), errEl, function(j){
-    showDone("Sale sent!", j.ref, "The BDC has it marked "+(d.timing==="today"?"PERFORMED TODAY":"NEEDS SCHEDULING")+
+    var tl = []; if(d.timingToday) tl.push("PERFORMED TODAY"); if(d.timingFuture) tl.push("NEEDS SCHEDULING");
+    showDone("Sale sent!", j.ref, "The BDC has it marked "+tl.join(" + ")+
       (recs.length?" with AGREEMENT NEEDED":"")+".");
     selected={}; renderServices(); clearForm("s");
   });
@@ -387,6 +389,8 @@ function clearForm(p){
     var el = document.getElementById(p+"-"+f); if(el) el.value="";
   });
   var m = document.getElementById(p+"-lookupMsg"); if(m) m.innerHTML="";
+  var c1 = document.getElementById(p+"-today"); if(c1) c1.checked = false;
+  var c2 = document.getElementById(p+"-future"); if(c2) c2.checked = false;
 }
 
 /* ---------- my submissions ---------- */
