@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Catseye Tech Hub</title>
+<meta name="theme-color" content="#1a1a1a">
+<style>
+  :root { --ink:#1a1a1a; --orange:#FF6B00; --green:#3A7D44; --red:#CC0000; --bg:#f4f4f2; --card:#fff; --line:#e2e2df; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif; background:var(--bg); color:var(--ink); min-height:100vh; }
+  header { background:var(--ink); color:#fff; padding:14px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:5; }
+  header img { height:36px; }
+  header .t { font-weight:900; letter-spacing:.5px; font-size:17px; }
+  header .t small { display:block; font-weight:400; font-size:11px; color:#ffffffbb; letter-spacing:0; }
+  header .back { color:#fff; text-decoration:none; font-size:22px; line-height:1; padding:4px 8px 4px 0; }
+  main { max-width:520px; margin:0 auto; padding:16px 14px 60px; }
+  .hidden { display:none!important; }
+  .btn { display:block; width:100%; border:0; border-radius:10px; padding:16px; font-size:17px; font-weight:800; cursor:pointer; text-align:center; text-decoration:none; }
+  .btn.primary { background:var(--orange); color:#fff; }
+  .btn.dark { background:var(--ink); color:#fff; }
+  .btn.ghost { background:#fff; color:var(--ink); border:2px solid var(--ink); }
+  .btn:active { opacity:.85; }
+  .menu .btn { margin-bottom:14px; padding:20px; font-size:18px; }
+  .menu .sub { font-weight:400; font-size:13px; opacity:.75; display:block; margin-top:3px; }
+  label { display:block; font-weight:700; font-size:13px; margin:14px 0 4px; }
+  label .req { color:var(--orange); }
+  input, select, textarea { width:100%; padding:12px; border:1.5px solid var(--line); border-radius:8px; font-size:16px; background:#fff; font-family:inherit; }
+  input:focus, select:focus, textarea:focus { outline:2px solid var(--orange); border-color:var(--orange); }
+  textarea { min-height:70px; }
+  .row { display:flex; gap:8px; align-items:flex-end; }
+  .row > div { flex:1; }
+  .row .mini { flex:0 0 auto; }
+  .mini button { padding:12px 14px; border:0; border-radius:8px; background:var(--ink); color:#fff; font-weight:700; font-size:14px; cursor:pointer; }
+  .card { background:var(--card); border:1.5px solid var(--line); border-radius:10px; padding:12px; margin-top:10px; }
+  .svc { cursor:pointer; }
+  .svc.on { border-color:var(--orange); box-shadow:0 0 0 2px #ff6b0033; }
+  .svc .top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .svc .nm { font-weight:800; font-size:15px; }
+  .svc .pr { font-weight:900; color:var(--green); white-space:nowrap; }
+  .svc .rec { font-size:12px; color:var(--orange); font-weight:700; }
+  .svc .det { font-size:13px; color:#444; margin-top:8px; border-top:1px dashed var(--line); padding-top:8px; }
+  .svc .det b { color:var(--ink); }
+  .svc .edit { margin-top:8px; border-top:1px dashed var(--line); padding-top:8px; }
+  .flag { color:var(--red); font-weight:800; font-size:12px; }
+  .totals { background:var(--ink); color:#fff; border-radius:10px; padding:14px; margin-top:14px; }
+  .totals .ln { display:flex; justify-content:space-between; font-size:15px; margin:4px 0; }
+  .totals .ln b { color:var(--orange); }
+  .ok-wrap { text-align:center; padding:40px 10px; }
+  .ok-wrap .big { font-size:56px; }
+  .ok-wrap h2 { margin:10px 0 6px; }
+  .ok-wrap .ref { display:inline-block; background:var(--ink); color:var(--orange); font-weight:900; padding:8px 18px; border-radius:8px; font-size:20px; margin:10px 0; letter-spacing:1px; }
+  .err { background:#fdecea; color:#a12622; border:1px solid #f5c6c3; border-radius:8px; padding:10px; margin-top:12px; font-size:14px; }
+  .note { font-size:12px; color:#666; margin-top:6px; }
+  .sub-row { background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:12px; margin-top:10px; font-size:14px; }
+  .sub-row .hd { display:flex; justify-content:space-between; font-weight:800; }
+  .sub-row .tag { font-size:11px; font-weight:800; padding:2px 8px; border-radius:20px; color:#fff; }
+  .tag.LEAD { background:var(--green); } .tag.SOLD { background:var(--orange); }
+  .spin { text-align:center; color:#888; padding:20px; }
+  .lookup-ok { color:var(--green); font-size:13px; font-weight:700; margin-top:4px; }
+  #submitBar { position:sticky; bottom:0; padding:10px 0; background:linear-gradient(transparent, var(--bg) 30%); }
+</style>
+</head>
+<body>
+<header>
+  <a href="#home" class="back hidden" id="backBtn">&#8592;</a>
+  <img src="badge.png" alt="" onerror="this.style.display='none'">
+  <div class="t">CATSEYE TECH HUB<small>Catseye Family of Brands</small></div>
+</header>
+<main>
+
+<!-- HOME -->
+<section id="v-home">
+  <label>You are <span class="req">*</span></label>
+  <input id="techPick" list="techList" placeholder="Start typing your name..." autocomplete="off">
+  <datalist id="techList"></datalist>
+  <div class="note" id="techNote"></div>
+  <div class="menu" style="margin-top:22px">
+    <a class="btn primary" href="#lead">Submit a Lead<span class="sub">New customer or new issue &mdash; BDC calls them</span></a>
+    <a class="btn dark" href="#sell">Sell a Job<span class="sub">Customer said yes &mdash; send it in</span></a>
+    <a class="btn ghost" href="https://pricing.catseyeportal.com/" target="_blank" rel="noopener">Pricing Guide<span class="sub">Full guide &mdash; opens the pricing portal</span></a>
+    <a class="btn ghost" href="#mine">My Submissions<span class="sub">What you've sent in</span></a>
+  </div>
+</section>
+
+<!-- LEAD -->
+<section id="v-lead" class="hidden">
+  <h2>Submit a Lead</h2>
+  <p class="note">Takes 20 seconds. The BDC calls the customer within 1 business hour.</p>
+  <label>Account Number <span class="note">(if existing customer)</span></label>
+  <div class="row"><div><input id="l-account" inputmode="numeric" placeholder="e.g. 175585"></div>
+    <div class="mini"><button type="button" onclick="doLookup('l')">Look up</button></div></div>
+  <div id="l-lookupMsg"></div>
+  <label>Customer Name <span class="req">*</span></label>
+  <input id="l-name" autocomplete="off">
+  <label>Customer Phone <span class="req">*</span></label>
+  <input id="l-phone" type="tel" inputmode="tel">
+  <label>Customer Email</label>
+  <input id="l-email" type="email">
+  <label>Customer Address</label>
+  <input id="l-address">
+  <label>Customer Town</label>
+  <input id="l-town">
+  <label>What's the issue? <span class="req">*</span></label>
+  <select id="l-issue">
+    <option value="">Select...</option>
+    <option>Bats</option><option>Squirrels</option><option>Raccoon / skunk / other wildlife</option>
+    <option>Mice / rats</option><option>Bees / wasps / insects</option><option>Termites</option>
+    <option>Ticks / mosquitoes</option><option>Exclusion / Cat-Guard</option>
+    <option>Commercial / recurring service</option><option>Other</option>
+  </select>
+  <label>Notes</label>
+  <textarea id="l-notes" placeholder="Anything the BDC should know"></textarea>
+  <div id="l-err"></div>
+  <div id="submitBar"><button class="btn primary" id="l-submit" onclick="submitLead()">Send Lead</button></div>
+</section>
+
+<!-- SELL -->
+<section id="v-sell" class="hidden">
+  <h2>Sell a Job</h2>
+  <label>Account Number <span class="note">(existing customer &mdash; auto-fills below)</span></label>
+  <div class="row"><div><input id="s-account" inputmode="numeric" placeholder="e.g. 175585"></div>
+    <div class="mini"><button type="button" onclick="doLookup('s')">Look up</button></div></div>
+  <div id="s-lookupMsg"></div>
+  <label>Customer Name <span class="req">*</span></label>
+  <input id="s-name" autocomplete="off">
+  <label>Customer Phone <span class="req">*</span></label>
+  <input id="s-phone" type="tel" inputmode="tel">
+  <label>Customer Address</label>
+  <input id="s-address">
+  <label>Town</label>
+  <input id="s-town">
+  <label>When is the work happening? <span class="req">*</span></label>
+  <select id="s-timing">
+    <option value="">Select...</option>
+    <option value="today">Performed today (I did / am doing the work this visit)</option>
+    <option value="future">Future work &mdash; needs scheduling</option>
+  </select>
+  <label style="margin-top:20px">Services sold <span class="req">*</span> <span class="note">tap to select &middot; tap again to close</span></label>
+  <div id="svcList"><div class="spin">Loading services&hellip;</div></div>
+  <button class="btn ghost" type="button" style="margin-top:10px;padding:12px" onclick="addCustom()">+ Add custom service</button>
+  <div id="customList"></div>
+  <div class="totals" id="totals" style="display:none">
+    <div class="ln"><span>One-time total</span><b id="t-onetime">$0</b></div>
+    <div class="ln" id="t-rec-ln" style="display:none"><span>Recurring</span><b id="t-rec"></b></div>
+    <div class="ln" id="t-agr-ln" style="display:none"><span style="color:#ffb3b3">Agreement needed (recurring sold)</span><b>YES</b></div>
+  </div>
+  <label>Notes for the BDC</label>
+  <textarea id="s-notes" placeholder="Anything else &mdash; access, timing, promises made"></textarea>
+  <div id="s-err"></div>
+  <div id="submitBar2" style="position:sticky;bottom:0;padding:10px 0;background:linear-gradient(transparent,var(--bg) 30%)">
+    <button class="btn primary" id="s-submit" onclick="submitSold()">Send Sale to BDC</button>
+  </div>
+</section>
+
+<!-- MINE -->
+<section id="v-mine" class="hidden">
+  <h2>My Submissions</h2>
+  <div id="mineList" class="spin">Loading&hellip;</div>
+</section>
+
+<!-- DONE -->
+<section id="v-done" class="hidden">
+  <div class="ok-wrap">
+    <div class="big">&#10003;</div>
+    <h2 id="doneTitle">Sent!</h2>
+    <div class="ref" id="doneRef"></div>
+    <p id="doneMsg" style="color:#444;font-size:14px"></p>
+    <p class="note">A receipt was emailed to you. You're credited as the referral.</p>
+    <a class="btn dark" style="margin-top:20px" href="#home">Done</a>
+  </div>
+</section>
+
+</main>
+<script>
+var EXEC_URL = "https://script.google.com/macros/s/AKfycbzODXga6VAmqcEUZv42-VIHLGcm-JQLBSuViJo6TUiMWnK_Db0aupia5iPN5n4bpLGo/exec";
+var CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_RxHFx1XOfliLIluDNdmTI_Y-0RiGwpAF-u3Lt_9PU_grcKpPAqSSWTWDs94CPxgQ_SgBsbg_Kg7-/pub?gid=890178840&single=true&output=csv";
+var FREQS = ["Weekly","2x per week","Bi-weekly","Monthly","Bi-monthly","Quarterly","Other"];
+
+var roster = [], services = [], customs = [], selected = {};
+
+/* ---------- routing ---------- */
+function route(){
+  var h = (location.hash || "#home").replace("#","");
+  ["home","lead","sell","mine","done"].forEach(function(v){
+    document.getElementById("v-"+v).classList.toggle("hidden", v!==h);
+  });
+  document.getElementById("backBtn").classList.toggle("hidden", h==="home");
+  if((h==="lead"||h==="sell") && !techName()){ alert("Pick your name first."); location.hash="#home"; return; }
+  if(h==="mine") loadMine();
+  window.scrollTo(0,0);
+}
+window.addEventListener("hashchange", route);
+
+/* ---------- tech picker ---------- */
+function techName(){ return (localStorage.getItem("techName")||"").trim(); }
+function techEmail(){ return localStorage.getItem("techEmail")||""; }
+function initTech(){
+  var inp = document.getElementById("techPick");
+  inp.value = techName();
+  updateTechNote();
+  inp.addEventListener("change", function(){
+    var m = roster.find(function(t){ return t.name.toLowerCase() === inp.value.trim().toLowerCase(); });
+    if(m){ localStorage.setItem("techName", m.name); localStorage.setItem("techEmail", m.email||""); }
+    else { localStorage.setItem("techName", inp.value.trim()); localStorage.setItem("techEmail",""); }
+    updateTechNote();
+  });
+}
+function updateTechNote(){
+  var n = document.getElementById("techNote");
+  n.textContent = techName() ? ("Submitting as " + techName() + (techEmail() ? " - receipt goes to " + techEmail() : "")) : "";
+}
+function loadRoster(){
+  fetch(EXEC_URL + "?action=roster").then(function(r){return r.json();}).then(function(j){
+    if(!j.ok) return;
+    roster = j.techs || [];
+    var dl = document.getElementById("techList");
+    dl.innerHTML = roster.map(function(t){ return "<option value=\"" + esc(t.name) + "\">"; }).join("");
+    updateTechNote();
+  }).catch(function(){});
+}
+
+/* ---------- pricing (live sheet, Role=Tech) ---------- */
+function parseCSV(text){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(cur); cur=""; }
+    else if(c==="\n"||c==="\r"){ if(c==="\r"&&text[i+1]==="\n")i++; row.push(cur); rows.push(row); row=[]; cur=""; }
+    else cur+=c;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function loadServices(){
+  fetch(CSV_URL).then(function(r){return r.text();}).then(function(t){
+    var rows = parseCSV(t); var hdr = rows[0];
+    var ix = {}; hdr.forEach(function(h,i){ ix[h.trim()] = i; });
+    services = rows.slice(1).filter(function(r){ return (r[ix["Role"]]||"").trim()==="Tech" && (r[ix["SeeMgmt"]]||"").trim()!=="Y"; })
+      .map(function(r,i){
+        var priceRaw = (r[ix["Price"]]||"").trim();
+        var recRaw = (r[ix["Recurring"]]||"").trim();
+        var m = priceRaw.replace(/,/g,"").match(/\$\s*(\d+(?:\.\d+)?)/);
+        return { id:"svc"+i, name:(r[ix["Service"]]||"").trim(), priceRaw:priceRaw,
+          priceNum: m?parseFloat(m[1]):"", recurring:!!recRaw, recRaw:recRaw,
+          includes:(r[ix["Includes"]]||"").trim(), notes:(r[ix["Notes"]]||"").trim(),
+          desc:(r[ix["Description"]]||"").trim() };
+      }).filter(function(s){ return s.name; });
+    renderServices();
+  }).catch(function(){
+    document.getElementById("svcList").innerHTML = "<div class='err'>Couldn't load the service list. Check your connection, or use + Add custom service.</div>";
+  });
+}
+function renderServices(){
+  var el = document.getElementById("svcList");
+  el.innerHTML = services.map(function(s){
+    var on = !!selected[s.id];
+    var html = "<div class='card svc"+(on?" on":"")+"' id='"+s.id+"'>"
+      + "<div class='top' onclick=\"toggleSvc('"+s.id+"')\">"
+      + "<div><div class='nm'>"+esc(s.name)+"</div>"
+      + (s.recurring?"<div class='rec'>RECURRING - "+esc(s.recRaw)+"</div>":"")
+      + "</div><div class='pr'>"+esc(s.priceRaw)+"</div></div>";
+    if(on){
+      html += "<div class='det'>"
+        + (s.includes?"<b>Includes:</b> "+esc(s.includes)+"<br>":"")
+        + (s.desc?"<b>What it is:</b> "+esc(s.desc)+"<br>":"")
+        + (s.notes?"<b>Note:</b> "+esc(s.notes):"") + "</div>"
+        + "<div class='edit' onclick='event.stopPropagation()'>"
+        + "<label style='margin-top:0'>Price charged ($)"+(s.priceNum===""?" <span class='note'>(list: "+esc(s.priceRaw)+")</span>":"")+"</label>"
+        + "<input type='number' inputmode='decimal' step='0.01' id='p-"+s.id+"' value='"+(selected[s.id].price)+"' oninput='setPrice(\""+s.id+"\",this.value)'>"
+        + "<div id='fl-"+s.id+"' class='flag'>"+(selected[s.id].edited?"Custom price - will be flagged RED to the BDC":"")+"</div>";
+      if(s.recurring){
+        html += "<label>Frequency <span class='req'>*</span></label><select id='fq-"+s.id+"' onchange='setFreq(\""+s.id+"\",this.value)'>"
+          + "<option value=''>Select frequency...</option>"
+          + FREQS.map(function(f){ return "<option"+(selected[s.id].frequency===f?" selected":"")+">"+f+"</option>"; }).join("")
+          + "</select>";
+      }
+      html += "</div>";
+    }
+    return html + "</div>";
+  }).join("");
+  updateTotals();
+}
+function toggleSvc(id){
+  var s = services.find(function(x){return x.id===id;});
+  if(selected[id]) delete selected[id];
+  else selected[id] = { price: s.priceNum, edited:false, frequency:"" };
+  renderServices();
+}
+function setPrice(id, v){
+  var s = services.find(function(x){return x.id===id;});
+  selected[id].price = v;
+  selected[id].edited = (String(v) !== String(s.priceNum));
+  document.getElementById("fl-"+id).textContent = selected[id].edited ? "Custom price - will be flagged RED to the BDC" : "";
+  updateTotals();
+}
+function setFreq(id, v){ selected[id].frequency = v; updateTotals(); }
+
+/* ---------- custom services ---------- */
+function addCustom(){
+  var cid = "cus" + Date.now();
+  customs.push({ id:cid, name:"", price:"", recurring:false, frequency:"" });
+  renderCustoms();
+}
+function renderCustoms(){
+  document.getElementById("customList").innerHTML = customs.map(function(c){
+    return "<div class='card' style='border-color:var(--red)'>"
+      + "<div class='flag'>CUSTOM SERVICE - goes to the BDC flagged RED</div>"
+      + "<label>Service description <span class='req'>*</span></label>"
+      + "<input id='cn-"+c.id+"' value=\""+esc(c.name)+"\" placeholder='e.g. Extra bed bug unit - 2nd floor apt' oninput='custSet(\""+c.id+"\",\"name\",this.value)'>"
+      + "<label>Price ($) <span class='req'>*</span></label>"
+      + "<input id='cp-"+c.id+"' type='number' inputmode='decimal' step='0.01' value='"+c.price+"' oninput='custSet(\""+c.id+"\",\"price\",this.value)'>"
+      + "<label>Type</label><select onchange='custSet(\""+c.id+"\",\"recurring\",this.value===\"rec\")'>"
+      + "<option value='one'"+(!c.recurring?" selected":"")+">One-time</option><option value='rec'"+(c.recurring?" selected":"")+">Recurring</option></select>"
+      + (c.recurring ? "<label>Frequency <span class='req'>*</span></label><select onchange='custSet(\""+c.id+"\",\"frequency\",this.value)'>"
+          + "<option value=''>Select frequency...</option>"
+          + FREQS.map(function(f){ return "<option"+(c.frequency===f?" selected":"")+">"+f+"</option>"; }).join("") + "</select>" : "")
+      + "<button type='button' class='btn ghost' style='margin-top:10px;padding:8px;font-size:13px' onclick='custDel(\""+c.id+"\")'>Remove</button>"
+      + "</div>";
+  }).join("");
+  updateTotals();
+}
+function custSet(id, k, v){ var c=customs.find(function(x){return x.id===id;}); c[k]=v; if(k==="recurring")renderCustoms(); else updateTotals(); }
+function custDel(id){ customs = customs.filter(function(x){return x.id!==id;}); renderCustoms(); }
+
+/* ---------- totals ---------- */
+function selList(){
+  var out=[];
+  Object.keys(selected).forEach(function(id){
+    var s = services.find(function(x){return x.id===id;});
+    out.push({ name:s.name, price:selected[id].price, listPriceRaw:s.priceRaw, edited:selected[id].edited,
+      custom:false, recurring:s.recurring, recurringPriceRaw:s.recRaw, frequency:selected[id].frequency,
+      includes:s.includes, svcNotes:s.notes });
+  });
+  customs.forEach(function(c){
+    if(!c.name && !c.price) return;
+    out.push({ name:c.name, price:c.price, listPriceRaw:"", edited:false, custom:true,
+      recurring:c.recurring, recurringPriceRaw:c.recurring?("$"+c.price):"", frequency:c.frequency, includes:"", svcNotes:"" });
+  });
+  return out;
+}
+function updateTotals(){
+  var list = selList();
+  var box = document.getElementById("totals");
+  if(!list.length){ box.style.display="none"; return; }
+  box.style.display="block";
+  var ot = 0;
+  list.forEach(function(s){ if(!s.recurring && s.price!=="" && !isNaN(parseFloat(s.price))) ot += parseFloat(s.price); });
+  document.getElementById("t-onetime").textContent = "$" + ot.toFixed(2).replace(/\.00$/,"");
+  var recs = list.filter(function(s){return s.recurring;});
+  document.getElementById("t-rec-ln").style.display = recs.length?"flex":"none";
+  document.getElementById("t-agr-ln").style.display = recs.length?"flex":"none";
+  if(recs.length) document.getElementById("t-rec").textContent =
+    recs.map(function(s){ return (s.recurringPriceRaw||("$"+s.price)) + (s.frequency?" ("+s.frequency+")":""); }).join(" + ");
+}
+
+/* ---------- lookup ---------- */
+function doLookup(prefix){
+  var acct = document.getElementById(prefix+"-account").value.trim();
+  var msg = document.getElementById(prefix+"-lookupMsg");
+  if(!acct){ msg.innerHTML="<div class='err'>Enter an account number first.</div>"; return; }
+  msg.innerHTML = "<div class='spin'>Looking up account "+esc(acct)+"&hellip;</div>";
+  fetch(EXEC_URL + "?action=lookup&account=" + encodeURIComponent(acct))
+    .then(function(r){return r.json();}).then(function(j){
+      if(!j.ok){ msg.innerHTML="<div class='err'>"+esc(j.error||"Not found")+" - fill the fields in manually.</div>"; return; }
+      document.getElementById(prefix+"-name").value = j.name || "";
+      document.getElementById(prefix+"-phone").value = j.phone || "";
+      if(document.getElementById(prefix+"-address")) document.getElementById(prefix+"-address").value = j.address || "";
+      if(document.getElementById(prefix+"-town")) document.getElementById(prefix+"-town").value = j.city || "";
+      msg.innerHTML = "<div class='lookup-ok'>&#10003; Found: "+esc(j.name)+" - "+esc(j.address)+", "+esc(j.city)+"</div>";
+    }).catch(function(){ msg.innerHTML="<div class='err'>Lookup failed - fill the fields in manually.</div>"; });
+}
+
+/* ---------- submit ---------- */
+function post(payload, btn, errEl, onOk){
+  btn.disabled = true; btn.textContent = "Sending&hellip;";
+  fetch(EXEC_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload) })
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      btn.disabled=false;
+      if(j.ok){ onOk(j); }
+      else { errEl.innerHTML = "<div class='err'>"+esc(j.error||"Something went wrong")+"</div>"; }
+      btn.textContent = btn.id==="l-submit" ? "Send Lead" : "Send Sale to BDC";
+    })
+    .catch(function(){
+      btn.disabled=false; btn.textContent = btn.id==="l-submit" ? "Send Lead" : "Send Sale to BDC";
+      errEl.innerHTML = "<div class='err'>Network problem - try again. If it keeps failing, call the BDC.</div>";
+    });
+}
+function submitLead(){
+  var errEl = document.getElementById("l-err"); errEl.innerHTML="";
+  var d = {
+    kind:"lead", techName:techName(), techEmail:techEmail(),
+    account:val("l-account"), custName:val("l-name"), custPhone:val("l-phone"),
+    custEmail:val("l-email"), custAddress:val("l-address"), custTown:val("l-town"),
+    issue:val("l-issue"), notes:val("l-notes")
+  };
+  if(!d.custName){ errEl.innerHTML="<div class='err'>Customer name is required.</div>"; return; }
+  if(d.custPhone.replace(/\D/g,"").length<7){ errEl.innerHTML="<div class='err'>A valid customer phone is required.</div>"; return; }
+  if(!d.issue){ errEl.innerHTML="<div class='err'>Pick what the issue is.</div>"; return; }
+  post(d, document.getElementById("l-submit"), errEl, function(j){
+    showDone("Lead sent!", j.ref, "The BDC will call "+d.custName+" within 1 business hour.");
+    clearForm("l");
+  });
+}
+function submitSold(){
+  var errEl = document.getElementById("s-err"); errEl.innerHTML="";
+  var list = selList();
+  var d = {
+    kind:"sold", techName:techName(), techEmail:techEmail(),
+    account:val("s-account"), custName:val("s-name"), custPhone:val("s-phone"),
+    custAddress:val("s-address"), custTown:val("s-town"),
+    timing:val("s-timing"), services:list, notes:val("s-notes")
+  };
+  if(!d.custName){ errEl.innerHTML="<div class='err'>Customer name is required.</div>"; return; }
+  if(d.custPhone.replace(/\D/g,"").length<7){ errEl.innerHTML="<div class='err'>A valid customer phone is required.</div>"; return; }
+  if(!d.timing){ errEl.innerHTML="<div class='err'>Pick when the work is happening.</div>"; return; }
+  if(!list.length){ errEl.innerHTML="<div class='err'>Select at least one service (or add a custom one).</div>"; return; }
+  for(var i=0;i<list.length;i++){
+    var s=list[i];
+    if(s.custom && (!s.name || s.price==="")){ errEl.innerHTML="<div class='err'>Custom services need a description and a price.</div>"; return; }
+    if(s.recurring && !s.frequency){ errEl.innerHTML="<div class='err'>Pick a frequency for: "+esc(s.name)+"</div>"; return; }
+  }
+  var ot=0; list.forEach(function(s){ if(!s.recurring && s.price!=="" && !isNaN(parseFloat(s.price))) ot+=parseFloat(s.price); });
+  d.oneTimeTotal = ot ? ot.toFixed(2).replace(/\.00$/,"") : "";
+  var recs = list.filter(function(s){return s.recurring;});
+  d.recurringSummary = recs.map(function(s){ return (s.recurringPriceRaw||("$"+s.price))+(s.frequency?" ("+s.frequency+")":""); }).join(" + ");
+  post(d, document.getElementById("s-submit"), errEl, function(j){
+    showDone("Sale sent!", j.ref, "The BDC has it marked "+(d.timing==="today"?"PERFORMED TODAY":"NEEDS SCHEDULING")+
+      (recs.length?" with AGREEMENT NEEDED":"")+".");
+    selected={}; customs=[]; renderServices(); renderCustoms(); clearForm("s");
+  });
+}
+function showDone(title, ref, msg){
+  document.getElementById("doneTitle").textContent = title;
+  document.getElementById("doneRef").textContent = ref;
+  document.getElementById("doneMsg").textContent = msg;
+  location.hash = "#done";
+}
+function clearForm(p){
+  ["account","name","phone","email","address","town","issue","notes","timing"].forEach(function(f){
+    var el = document.getElementById(p+"-"+f); if(el) el.value="";
+  });
+  var m = document.getElementById(p+"-lookupMsg"); if(m) m.innerHTML="";
+}
+
+/* ---------- my submissions ---------- */
+function loadMine(){
+  var el = document.getElementById("mineList");
+  if(!techName()){ el.innerHTML="<div class='err'>Pick your name on the home screen first.</div>"; return; }
+  el.innerHTML = "<div class='spin'>Loading submissions for "+esc(techName())+"&hellip;</div>";
+  fetch(EXEC_URL + "?action=submissions&tech=" + encodeURIComponent(techName()))
+    .then(function(r){return r.json();}).then(function(j){
+      if(!j.ok){ el.innerHTML="<div class='err'>"+esc(j.error||"Couldn't load")+"</div>"; return; }
+      if(!j.rows.length){ el.innerHTML="<div class='spin'>Nothing yet - your leads and sales will show up here.</div>"; return; }
+      el.innerHTML = j.rows.map(function(r){
+        return "<div class='sub-row'><div class='hd'><span>"+esc(r.customer)+"</span><span class='tag "+esc(r.type)+"'>"+esc(r.type)+"</span></div>"
+          + "<div>"+esc(r.services||"")+"</div>"
+          + "<div class='note'>"+esc(r.date)+" "+esc(r.time)+" - ref "+esc(r.ref)
+          + (r.oneTime?" - $"+esc(String(r.oneTime)):"") + (r.recurring?" - "+esc(r.recurring):"")
+          + (r.timing?" - "+esc(r.timing):"") + " - "+esc(r.status)+"</div></div>";
+      }).join("");
+    }).catch(function(){ el.innerHTML="<div class='err'>Couldn't load - check your connection.</div>"; });
+}
+
+/* ---------- utils ---------- */
+function val(id){ var el=document.getElementById(id); return el?el.value.trim():""; }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+initTech(); loadRoster(); loadServices(); route();
+</script>
+</body>
+</html>
