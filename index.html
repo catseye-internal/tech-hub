@@ -210,8 +210,12 @@ function updateTechNote(){
   var n = document.getElementById("techNote");
   n.textContent = techName() ? ("Submitting as " + techName() + (techEmail() ? " - receipt goes to " + techEmail() : "")) : "";
 }
+function api(payload){
+  return fetch(EXEC_URL, { method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(payload) })
+    .then(function(r){ return r.json(); });
+}
 function loadRoster(){
-  fetch(EXEC_URL + "?action=roster").then(function(r){return r.json();}).then(function(j){
+  api({action:"roster"}).then(function(j){
     if(!j.ok) return;
     roster = j.techs || [];
     var dl = document.getElementById("techList");
@@ -362,8 +366,8 @@ function doLookup(prefix){
   var msg = document.getElementById(prefix+"-lookupMsg");
   if(!acct){ msg.innerHTML="<div class='err'>Enter an account number first.</div>"; return; }
   msg.innerHTML = "<div class='spin'>Looking up account "+esc(acct)+"&hellip;</div>";
-  fetch(EXEC_URL + "?action=lookup&account=" + encodeURIComponent(acct))
-    .then(function(r){return r.json();}).then(function(j){
+  api({action:"lookup", account:acct})
+    .then(function(j){
       if(!j.ok){ msg.innerHTML="<div class='err'>"+esc(j.error||"Not found")+" - fill the fields in manually.</div>"; return; }
       document.getElementById(prefix+"-name").value = j.name || "";
       document.getElementById(prefix+"-phone").value = j.phone || "";
@@ -451,8 +455,8 @@ function loadMine(){
   var el = document.getElementById("mineList");
   if(!techName()){ el.innerHTML="<div class='err'>Pick your name on the home screen first.</div>"; return; }
   el.innerHTML = "<div class='spin'>Loading submissions for "+esc(techName())+"&hellip;</div>";
-  fetch(EXEC_URL + "?action=submissions&tech=" + encodeURIComponent(techName()))
-    .then(function(r){return r.json();}).then(function(j){
+  api({action:"submissions", tech:techName()})
+    .then(function(j){
       if(!j.ok){ el.innerHTML="<div class='err'>"+esc(j.error||"Couldn't load")+"</div>"; return; }
       if(!j.rows.length){ el.innerHTML="<div class='spin'>Nothing yet - your leads and sales will show up here.</div>"; return; }
       el.innerHTML = j.rows.map(function(r){
