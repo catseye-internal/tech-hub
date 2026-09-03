@@ -301,7 +301,7 @@ function renderServices(){
     var html = "<div class='card svc"+(on?" on":"")+"' id='"+s.id+"'>"
       + "<div class='top' onclick=\"toggleSvc('"+s.id+"')\">"
       + "<div class='nm'>"+esc(s.name)+"</div>"
-      + "<div class='pr'>"+(on?"&#10003;":esc(s.priceRaw||"+"))+"</div></div>";
+      + "<div class='pr'>"+(on?"&#10003;":"+")+"</div></div>";
     if(on){
       var sel = selected[s.id];
       html += "<div class='edit' onclick='event.stopPropagation()'>";
