@@ -78,7 +78,6 @@
   <div class="menu" style="margin-top:22px">
     <a class="btn primary" href="#lead">Submit a Lead<span class="sub">New customer or new issue &mdash; BDC calls them</span></a>
     <a class="btn dark" href="#sell">Sell a Job<span class="sub">Customer said yes &mdash; send it in</span></a>
-    <a class="btn ghost" href="https://pricing.catseyeportal.com/" target="_blank" rel="noopener">Pricing Guide<span class="sub">Full guide &mdash; opens the pricing portal</span></a>
     <a class="btn ghost" href="#mine">My Submissions<span class="sub">What you've sent in</span></a>
   </div>
 </section>
@@ -151,6 +150,7 @@
     <button class="btn primary" id="s-submit" onclick="submitSold()">Send Sale to BDC</button>
   </div>
   <button class="btn ghost" type="button" style="margin-top:8px;padding:10px;font-size:14px" onclick="resetSell()">Reset fields</button>
+  <div class="card" style="border:1.5px solid var(--ink);font-size:13px;margin-top:14px"><b>Recurring sales will require a contract.</b> Once you submit this, the BDC will contact the customer for the contract. Recurring job is not final/sold until contract is signed. One-time sales that are performed on the spot do not require a contract.</div>
 </section>
 
 <!-- MINE -->
@@ -175,7 +175,7 @@
 <script>
 var EXEC_URL = "https://script.google.com/macros/s/AKfycbzODXga6VAmqcEUZv42-VIHLGcm-JQLBSuViJo6TUiMWnK_Db0aupia5iPN5n4bpLGo/exec";
 var CSV_URL  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_RxHFx1XOfliLIluDNdmTI_Y-0RiGwpAF-u3Lt_9PU_grcKpPAqSSWTWDs94CPxgQ_SgBsbg_Kg7-/pub?gid=890178840&single=true&output=csv";
-var FREQS = ["One-time","Weekly","2x per week","Bi-weekly","Monthly","Bi-monthly","Quarterly","Other"];
+var FREQS = ["One-time","Weekly","2x per week","Bi-weekly","Monthly","Bi-monthly","Quarterly","6x per year","Annual","Other"];
 
 var roster = [], services = [], customs = [], selected = {};
 
@@ -224,9 +224,76 @@ function loadRoster(){
   }).catch(function(){});
 }
 
-/* ---------- services (fixed list - no prefilled pricing) ---------- */
-var SERVICE_NAMES = ["Platinum Program","Tick/Mosquito","Termite Monitoring (TMS)","Rodent Monitoring (RMS)","Commercial Program","General Pest (exterior)","General Pest (interior+exterior)","Other (custom fill)"];
-services = SERVICE_NAMES.map(function(n,i){ return { id:"svc"+i, name:n, other: n.indexOf("Other")===0 }; });
+/* ---------- services (curated list - pricing prefilled from live guide) ---------- */
+var SELL_MENU = [
+  { label:"Platinum Program", sheet:"Platinum Program (Tech)" },
+  { label:"Tick / Mosquito", sheet:"Tick / Mosquito (Tech)" },
+  { label:"Termite Monitoring System Add To Platinum", sheet:"Termite Monitoring System Add To Platinum" },
+  { label:"Rodent Monitoring (RMS)", sheet:"RMS (Tech)" },
+  { label:"Commercial Program", sheet:"Commercial Protection Program" },
+  { label:"General Pest (exterior)", sheet:"General Pest \u2014 Exterior ONLY One-Time" },
+  { label:"General Pest \u2014 Interior + Exterior One-Time", sheet:"General Pest \u2014 Interior + Exterior One-Time" },
+  { label:"Bed Bugs - Apt - per room", sheet:"Bed Bugs - Apt - per room" },
+  { label:"Roaches", sheet:"Roaches (Tech)" },
+  { label:"Other (custom fill)", sheet:"", other:true }
+];
+function normFreq(v){
+  v = String(v||"").trim();
+  if(!v) return "";
+  var m = FREQS.filter(function(f){ return f.toLowerCase() === v.toLowerCase(); });
+  return m.length ? m[0] : v;
+}
+function money(v){
+  var m = String(v||"").replace(/,/g,"").match(/\$\s*(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[1]) : "";
+}
+function parseCSV(text){
+  var rows=[],row=[],cur="",q=false;
+  for(var i=0;i<text.length;i++){
+    var c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+    else if(c==='"') q=true;
+    else if(c===","){ row.push(cur); cur=""; }
+    else if(c==="\n"||c==="\r"){ if(c==="\r"&&text[i+1]==="\n")i++; row.push(cur); rows.push(row); row=[]; cur=""; }
+    else cur+=c;
+  }
+  if(cur!==""||row.length){ row.push(cur); rows.push(row); }
+  return rows;
+}
+function loadServices(){
+  services = SELL_MENU.map(function(s,i){ return { id:"svc"+i, name:s.label, sheet:s.sheet, other:!!s.other,
+    priceRaw:"", priceNum:"", recNum:"", billFreq:"", svcFreq:"", includes:"", notes:"" }; });
+  renderServices();
+  fetch(CSV_URL).then(function(r){return r.text();}).then(function(txt){
+    var rows = parseCSV(txt); var hdr = rows[0]; var ix = {};
+    hdr.forEach(function(h,i){ ix[h.trim()] = i; });
+    services.forEach(function(s){
+      if(!s.sheet) return;
+      var r = null;
+      for(var i=1;i<rows.length;i++){ if((rows[i][ix["Service"]]||"").trim() === s.sheet){ r = rows[i]; break; } }
+      if(!r) return;
+      s.priceRaw = (r[ix["Price"]]||"").trim();
+      s.priceNum = money(s.priceRaw);
+      s.recNum = money(r[ix["Recurring"]]);
+      s.billFreq = normFreq(r[ix["Billing Frequency"]]);
+      s.svcFreq = normFreq(r[ix["Service Frequency"]]);
+      s.includes = (r[ix["Includes"]]||"").trim();
+      s.notes = (r[ix["Notes"]]||"").trim();
+    });
+    renderServices();
+  }).catch(function(){});
+}
+function freqOptions(sel){
+  var opts = FREQS.slice();
+  if(sel && opts.indexOf(sel) === -1) opts.push(sel);
+  return opts;
+}
+function freqSelect(id, kind, sel, label){
+  return "<label>"+label+" <span class='req'>*</span></label><select id='"+kind+"-"+id+"' onchange='setF(\""+id+"\",\""+kind+"\",this.value)'>"
+    + "<option value=''>Select...</option>"
+    + freqOptions(sel).map(function(f){ return "<option"+(sel===f?" selected":"")+">"+f+"</option>"; }).join("")
+    + "</select>";
+}
 function renderServices(){
   var el = document.getElementById("svcList");
   el.innerHTML = services.map(function(s){
@@ -234,7 +301,7 @@ function renderServices(){
     var html = "<div class='card svc"+(on?" on":"")+"' id='"+s.id+"'>"
       + "<div class='top' onclick=\"toggleSvc('"+s.id+"')\">"
       + "<div class='nm'>"+esc(s.name)+"</div>"
-      + "<div class='pr'>"+(on?"&#10003; selected":"+")+"</div></div>";
+      + "<div class='pr'>"+(on?"&#10003;":esc(s.priceRaw||"+"))+"</div></div>";
     if(on){
       var sel = selected[s.id];
       html += "<div class='edit' onclick='event.stopPropagation()'>";
@@ -242,28 +309,34 @@ function renderServices(){
         html += "<label style='margin-top:0'>Describe the service <span class='req'>*</span></label>"
           + "<input id='d-"+s.id+"' value=\""+esc(sel.desc||"")+"\" placeholder='e.g. Extra bed bug unit - 2nd floor apt' oninput='setDesc(\""+s.id+"\",this.value)'>";
       }
-      html += "<label"+(s.other?"":" style='margin-top:0'")+">One-time cost ($)</label>"
+      if(s.includes || s.notes){
+        html += "<div class='det' style='margin-top:0;border-top:0;padding-top:0'>"
+          + (s.includes?"<b>Includes:</b> "+esc(s.includes)+"<br>":"")
+          + (s.notes?"<b>Note:</b> "+esc(s.notes):"") + "</div>";
+      }
+      html += "<label"+((s.other||s.includes||s.notes)?"":" style='margin-top:0'")+">One-time cost ($)"+(s.priceRaw?" <span class='note'>(guide: "+esc(s.priceRaw)+")</span>":"")+"</label>"
         + "<input type='number' inputmode='decimal' step='0.01' id='p-"+s.id+"' value='"+(sel.init)+"' oninput='setInit(\""+s.id+"\",this.value)'>"
-        + "<label>Recurring cost ($ per period)</label>"
+        + "<label>Recurring cost ($ per billing period)</label>"
         + "<input type='number' inputmode='decimal' step='0.01' id='pr-"+s.id+"' value='"+(sel.rec)+"' oninput='setRec(\""+s.id+"\",this.value)'>"
-        + "<label>Frequency <span class='req'>*</span></label><select id='fq-"+s.id+"' onchange='setFreq(\""+s.id+"\",this.value)'>"
-        + "<option value=''>Select frequency...</option>"
-        + FREQS.map(function(f){ return "<option"+(sel.frequency===f?" selected":"")+">"+f+"</option>"; }).join("")
-        + "</select></div>";
+        + freqSelect(s.id, "bf", sel.billFreq, "Billing frequency")
+        + freqSelect(s.id, "sf", sel.svcFreq, "Service frequency")
+        + "</div>";
     }
     return html + "</div>";
   }).join("");
   updateTotals();
 }
 function toggleSvc(id){
+  var s = services.find(function(x){return x.id===id;});
   if(selected[id]) delete selected[id];
-  else selected[id] = { init:"", rec:"", desc:"", frequency:"" };
+  else selected[id] = { init: s.priceNum, rec: s.recNum, desc:"",
+    billFreq: s.billFreq || "One-time", svcFreq: s.svcFreq || "One-time" };
   renderServices();
 }
 function setInit(id, v){ selected[id].init = v; updateTotals(); }
 function setRec(id, v){ selected[id].rec = v; updateTotals(); }
 function setDesc(id, v){ selected[id].desc = v; }
-function setFreq(id, v){ selected[id].frequency = v; updateTotals(); }
+function setF(id, kind, v){ if(kind==="bf") selected[id].billFreq = v; else selected[id].svcFreq = v; updateTotals(); }
 
 /* ---------- totals ---------- */
 function selList(){
@@ -271,11 +344,12 @@ function selList(){
   services.forEach(function(s){
     if(!selected[s.id]) return;
     var sel = selected[s.id];
-    var isRec = sel.frequency !== "One-time" && sel.rec !== "" && sel.rec != null;
+    var isRec = sel.billFreq !== "One-time" && sel.rec !== "" && sel.rec != null;
     out.push({ name: s.other ? ("CUSTOM: " + (sel.desc||"")) : s.name,
-      price: sel.init, listPriceRaw:"", edited:false, custom: !!s.other,
+      price: sel.init, listPriceRaw: s.priceRaw, edited:false, custom: !!s.other,
       recurring: isRec, recurringPriceRaw: isRec ? ("$"+sel.rec) : "", recPrice: sel.rec,
-      frequency: sel.frequency, includes:"", svcNotes:"" });
+      frequency: sel.billFreq, svcFreq: sel.svcFreq,
+      includes: s.includes, svcNotes: s.notes });
   });
   return out;
 }
@@ -291,7 +365,7 @@ function updateTotals(){
   document.getElementById("t-rec-ln").style.display = recs.length?"flex":"none";
   document.getElementById("t-agr-ln").style.display = recs.length?"flex":"none";
   if(recs.length) document.getElementById("t-rec").textContent =
-    recs.map(function(s){ return s.recurringPriceRaw + (s.frequency?" ("+s.frequency+")":""); }).join(" + ");
+    recs.map(function(s){ return s.recurringPriceRaw + (s.frequency?" ("+s.frequency+" billing)":""); }).join(" + ");
 }
 
 /* ---------- lookup ---------- */
@@ -361,9 +435,10 @@ function submitSold(){
   for(var i=0;i<list.length;i++){
     var s=list[i];
     if(s.custom && !String(s.name).replace("CUSTOM:","").trim()){ errEl.innerHTML="<div class='err'>Describe the custom service.</div>"; return; }
-    if(!s.frequency){ errEl.innerHTML="<div class='err'>Pick a frequency for: "+esc(s.name)+"</div>"; return; }
+    if(!s.frequency){ errEl.innerHTML="<div class='err'>Pick a billing frequency for: "+esc(s.name)+"</div>"; return; }
+    if(!s.svcFreq){ errEl.innerHTML="<div class='err'>Pick a service frequency for: "+esc(s.name)+"</div>"; return; }
     if((s.price==="" || s.price==null) && (s.recPrice==="" || s.recPrice==null)){ errEl.innerHTML="<div class='err'>Enter a one-time or recurring cost for: "+esc(s.name)+"</div>"; return; }
-    if(s.frequency!=="One-time" && (s.recPrice==="" || s.recPrice==null)){ errEl.innerHTML="<div class='err'>Enter the recurring cost for: "+esc(s.name)+" (or pick One-time)</div>"; return; }
+    if(s.frequency!=="One-time" && (s.recPrice==="" || s.recPrice==null)){ errEl.innerHTML="<div class='err'>Enter the recurring cost for: "+esc(s.name)+" (or set billing to One-time)</div>"; return; }
   }
   var ot=0; list.forEach(function(s){ if(s.price!=="" && s.price!=null && !isNaN(parseFloat(s.price))) ot+=parseFloat(s.price); });
   d.oneTimeTotal = ot ? ot.toFixed(2).replace(/\.00$/,"") : "";
@@ -416,7 +491,7 @@ function loadMine(){
 function val(id){ var el=document.getElementById(id); return el?el.value.trim():""; }
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
-initTech(); loadRoster(); renderServices(); route();
+initTech(); loadRoster(); loadServices(); route();
 </script>
 </body>
 </html>
